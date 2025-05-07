@@ -125,6 +125,7 @@ class HospitalData(object):
                 for line in response.iter_lines():
                     writer.writerow(line.decode('utf-8').split(','))
             tc_data = pd.read_csv(csv_name) #tc.SFrame(csv_name)
+            print(tc_data)
             tc_data['date'] = tc_data.apply(lambda x: x['Date'].replace('-',''), axis=1)
             tc_data['state'] = tc_data.apply(lambda x: x['StateAbbreviation'], axis=1)
 
@@ -153,6 +154,8 @@ class HospitalData(object):
             return pd.read_csv(csv_name)
 
     def join_HHS_UMN_data(self, hhs_data, umn_data):
+        print(umn_data)
+    
         ## joining the relevant column names of the 2 data sources
         
         # column name meanings found here: https://healthdata.gov/covid-19-reported-patient-impact-and-hospital-capacity-state-data-dictionary

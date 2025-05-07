@@ -10,3 +10,4 @@ dill>=0.2
 scikit-learn>=0.21
 dash>=1.10.0
 sodapy>=2.0
+autograd>=1.7.0

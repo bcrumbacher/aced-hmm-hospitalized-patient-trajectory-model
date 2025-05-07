@@ -13,7 +13,6 @@ import warnings
 from copy import deepcopy
 import pickle
 import itertools
-
 from aced_hmm.simulator import run_forecast__python
 
 import warnings
@@ -206,10 +205,10 @@ class ABCSampler(object):
         self.params_init = params_init
         self.abc_prior_dict = abc_prior_dict
 
-        if algorithm == 'abc':
-            self.abc_prior = self.initialize_abc_prior(abc_prior_dict)
-        else:
-            self.abc_prior = None
+        #if algorithm == 'abc':
+        self.abc_prior = self.initialize_abc_prior(abc_prior_dict)
+        #else:
+         #   self.abc_prior = None
         
         if params_init is None:
             self.theta_init = self.select_theta_init_from_prior(self.abc_prior)
@@ -407,8 +406,8 @@ class ABCSampler(object):
         lam_stddev_list = np.linspace(max_lam_stddev, min_lam_stddev, num_iterations)
         tau_stddev_list = np.linspace(max_tau_stddev, min_tau_stddev, num_iterations)
 
-        for n in range(num_iterations):
-            print("Iteration #%d" % (n + 1))
+        for n in tqdm.tqdm(range(num_iterations)):
+            #print("Iteration #%d" % (n + 1))
             # import time
             # start = time.time()
 
@@ -472,12 +471,12 @@ class ABCSampler(object):
                         num_accepted += 1
                         log_prior_prev = log_prior_prime
                     else:
-                        accepted_alphas.append(np.NaN)
+                        accepted_alphas.append(np.nan)
 
                 else:
-                    accepted_distances.append(np.NaN)
-                    accepted_alphas.append(np.NaN)
-                    all_alphas.append(np.NaN)
+                    accepted_distances.append(np.nan)
+                    accepted_alphas.append(np.nan)
+                    all_alphas.append(np.nan)
 
                 self.update_epsilon(n)
 
@@ -528,12 +527,12 @@ class ABCSampler(object):
                             num_accepted += 1
                             log_prior_prev = log_prior_prime
                         else:
-                            accepted_alphas.append(np.NaN)
+                            accepted_alphas.append(np.nan)
 
                     else:
-                        accepted_distances.append(np.NaN)
-                        accepted_alphas.append(np.NaN)
-                        all_alphas.append(np.NaN)
+                        accepted_distances.append(np.nan)
+                        accepted_alphas.append(np.nan)
+                        all_alphas.append(np.nan)
 
                     self.update_epsilon(n)
 
@@ -587,12 +586,12 @@ class ABCSampler(object):
                             num_accepted += 1
                             log_prior_prev = log_prior_prime
                         else:
-                            accepted_alphas.append(np.NaN)
+                            accepted_alphas.append(np.nan)
 
                     else:
-                        accepted_distances.append(np.NaN)
-                        accepted_alphas.append(np.NaN)
-                        all_alphas.append(np.NaN)
+                        accepted_distances.append(np.nan)
+                        accepted_alphas.append(np.nan)
+                        all_alphas.append(np.nan)
 
                     self.update_epsilon(n)
 
@@ -644,12 +643,12 @@ class ABCSampler(object):
                             num_accepted += 1
                             log_prior_prev = log_prior_prime
                         else:
-                            accepted_alphas.append(np.NaN)
+                            accepted_alphas.append(np.nan)
 
                     else:
-                        accepted_distances.append(np.NaN)
-                        accepted_alphas.append(np.NaN)
-                        all_alphas.append(np.NaN)
+                        accepted_distances.append(np.nan)
+                        accepted_alphas.append(np.nan)
+                        all_alphas.append(np.nan)
 
                     self.update_epsilon(n)
             # end = time.time()
@@ -661,6 +660,11 @@ class ABCSampler(object):
 
         if algorithm == 'abc':
             return self.abc_mcmc(self.theta_init, num_iterations, dir_scale, lam_stddev, tau_stddev)
+        elif algorithm == 'hmc':
+            # New parameters specific to HMC
+            step_size = 0.01  # Step size for leapfrog integration
+            num_steps = 10    # Number of leapfrog steps for trajectory
+            return self.hmc_mcmc(self.theta_init, num_iterations, step_size, num_steps)
         else:
             print("Invalid algorithm specification '%s'" % algorithm)
             print("Valid options are:")
@@ -827,6 +831,8 @@ class ABCSampler(object):
         with open(filename, 'w+') as f:
             f.write(json.dumps(params_dict, cls=MyEncoder, indent=2))
 
+
+
 def save_stats_to_csv(stats, filename):
     df = pd.DataFrame(stats)
     df.to_csv(filename)
@@ -866,8 +872,11 @@ if __name__ == '__main__':
 
     # obsolete arguments, ignore them
     parser.add_argument('--random_seed', default=101, type=int) # unused
-    parser.add_argument('--algorithm', default='abc') # stays fixed on 'abc'
 
+    parser.add_argument('--algorithm', default='abc', choices=['abc', 'hmc'], 
+                        help='Sampling algorithm: abc or hmc')
+
+    
     args, unknown_args = parser.parse_known_args()
 
     unk_keys = map(lambda s: s[2:].strip(), unknown_args[::2])
@@ -895,8 +904,11 @@ if __name__ == '__main__':
         params_init = None
     else:
         params_init = args.params_init
+
     
-    if algorithm == 'abc' or algorithm == 'abc_exp':
+    
+    #if algorithm == 'abc' or algorithm == 'abc_exp':
+    if True:
         with open(args.abc_prior_config, 'r') as f:
             abc_prior = json.load(f)
 
@@ -907,11 +919,6 @@ if __name__ == '__main__':
         thetas_output = args.output_dir + '/posterior_samples.json' # need to do it this way to be compatible with linux-like environments...
         config_post_output = os.path.join(args.output_dir, 'config_after_abc.json')
         stats_output = os.path.join(args.output_dir, 'abc_training_stats.csv')
-    else:
-        # just obsolete things
-        abc_prior = None
-        thetas_output = args.output_template + '_last_thetas_%s.json' % (params_init)
-        stats_output = args.output_template + '_stats_%s.csv' % (params_init)
 
     config_file = os.path.join(args.input_dir, 'config.json')
     inputfile = os.path.join(args.input_dir, 'daily_counts.csv')
@@ -939,13 +946,24 @@ if __name__ == '__main__':
         T_y.append(true_df[col_name])
     T_y = np.asarray(T_y).flatten()
 
-    # initalize sampler
-    sampler = ABCSampler(seed, start_epsilon, annealing_constant, T_y, train_test_split, config_dict, func_name, num_timesteps, num_simulations, approximate=approximate)
-
-    sampler.initialize_theta(algorithm, abc_prior, params_init)
+    sampler = ABCSampler(
+            seed=seed, 
+            start_epsilon=start_epsilon, 
+            annealing_constant=annealing_constant, 
+            T_y=T_y, 
+            train_test_split=train_test_split, 
+            config_dict=config_dict, 
+            func_name=func_name, 
+            num_timesteps=num_timesteps, 
+            num_simulations=num_simulations, 
+            approximate=approximate
+        )
+    
+    sampler.initialize_theta(args.algorithm, abc_prior, params_init)
 
     import time
     start = time.time()
+
     accepted_thetas, accepted_distances, num_accepted, all_distances, accepted_alphas, all_alphas, accepted_test_forecasts = sampler.draw_samples(algorithm, num_iterations, dir_scale, lam_stddev, tau_stddev)
     end = time.time()
     print('Elapsed time with %s on %d iterations: %9.3f sec' % (func_name, num_iterations, end - start))

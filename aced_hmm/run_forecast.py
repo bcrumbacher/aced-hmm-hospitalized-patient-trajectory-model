@@ -172,6 +172,8 @@ if __name__ == '__main__':
     with open(args.config_path, 'r') as f:
         config_dict = json.load(f)
 
+    print(args.config_path)
+
     with open(config_dict['parameters'], 'r') as f:
         parameters = json.load(f)
 
